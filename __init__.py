@@ -1,0 +1,1 @@
+"""The bsb-lan component."""

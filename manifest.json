@@ -1,0 +1,8 @@
+{
+  "domain": "bsb_lan",
+  "name": "Boiler System Bus over LAN",
+  "documentation": "https://github.com",
+  "dependencies": [],
+  "codeowners": ["@liudger"],
+  "requirements": ["objectpath==0.6.1"]
+}
