@@ -25,4 +25,5 @@ sensor:
       - '1600'
 ```
 HOST_HERE = http://ip-address/JQ
+
 For the Payload look it up in your bsb-lan server the desired parameter you want to read
