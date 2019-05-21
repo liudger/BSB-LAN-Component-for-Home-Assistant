@@ -8,8 +8,9 @@ https://github.com/fredlcore/bsb_lan
 dicussion about this component
 https://community.home-assistant.io/t/bsb-lan-component/113501/1
 
-[bug report](scr/bug_report.md)
-[feature request](scr/feature_request.md)
+[bug report](src/bug_report.md)
+
+[feature request](src/feature_request.md)
 
 
 ### Installation
