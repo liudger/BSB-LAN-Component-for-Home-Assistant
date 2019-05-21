@@ -11,7 +11,7 @@ https://github.com/fredlcore/bsb_lan
 download the bsb_lan folder and
 copy this folder to `<config_dir>/custom_components/`.
 
-<B> Sensor component install <B/>
+<B> Sensor component install </B>
 Add the following entry for your sensor in your `configuration.yaml`:
 
 ```yaml
@@ -31,7 +31,7 @@ HOST_HERE = ip-address of your bsb-lan device. For example 10.0.1.10
 For the Payload look it up in your bsb-lan server the desired parameter you want to read
 
 
-<B> Climate component install <B/>
+<B> Climate component install </B>
 add the following entry for climate component in your `configuration.yaml`:
 
 ```yaml
