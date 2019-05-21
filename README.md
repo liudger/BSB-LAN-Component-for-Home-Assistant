@@ -43,3 +43,5 @@ Web-Interface screenshots:
 
 <img src="https://github.com/liudger/BSB-LAN-Component-for-Home-Assistant/blob/master/src/overviewClimate.png" size="50%">
 
+<img src="https://github.com/liudger/BSB-LAN-Component-for-Home-Assistant/blob/master/src/readingSensor_outsideTemp.png" size="50%">
+
