@@ -29,7 +29,7 @@ HOST_HERE = ip-address
 
 For the Payload look it up in your bsb-lan server the desired parameter you want to read
 
-|climate component|
+
 
 add the following entry for climate component in your `configuration.yaml`:
 
@@ -40,4 +40,6 @@ climate:
 ```
 
 Web-Interface screenshots:
-|climate component| image:: https://github.com/liudger/BSB-LAN-Component-for-Home-Assistant/blob/master/src/overviewClimate.png
+
+<img src="https://github.com/liudger/BSB-LAN-Component-for-Home-Assistant/blob/master/src/overviewClimate.png" size="50%">
+
