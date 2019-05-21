@@ -12,6 +12,7 @@ download the bsb_lan folder and
 copy this folder to `<config_dir>/custom_components/`.
 
 <B> Sensor component install </B>
+
 Add the following entry for your sensor in your `configuration.yaml`:
 
 ```yaml
@@ -32,6 +33,7 @@ For the Payload look it up in your bsb-lan server the desired parameter you want
 
 
 <B> Climate component install </B>
+
 add the following entry for climate component in your `configuration.yaml`:
 
 ```yaml
