@@ -37,3 +37,5 @@ climate:
     host: HOST_HERE
 ```
 
+Web-Interface screenshots:
+[Climate component](src/overviewClimate.png)
