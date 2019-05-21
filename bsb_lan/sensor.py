@@ -3,15 +3,16 @@ from datetime import timedelta
 import logging
 import json
 
-import voluptuous as vol
 import requests
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+
+import voluptuous as vol
 
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA, DEVICE_CLASSES_SCHEMA)
 from homeassistant.const import (
     CONF_AUTHENTICATION, CONF_FORCE_UPDATE, CONF_HEADERS, CONF_NAME,
-    CONF_METHOD, CONF_PASSWORD, CONF_PAYLOAD, CONF_RESOURCE,
+    CONF_METHOD, CONF_PASSWORD, CONF_PAYLOAD, CONF_HOST,
     CONF_UNIT_OF_MEASUREMENT, CONF_USERNAME, CONF_TIMEOUT,
     CONF_VALUE_TEMPLATE, CONF_VERIFY_SSL, CONF_DEVICE_CLASS,
     HTTP_BASIC_AUTHENTICATION, HTTP_DIGEST_AUTHENTICATION)
@@ -26,13 +27,13 @@ DEFAULT_METHOD = 'POST'
 DEFAULT_NAME = 'BSB-LAN Sensor'
 DEFAULT_VERIFY_SSL = False
 DEFAULT_FORCE_UPDATE = False
-DEFAULT_TIMEOUT = 30
+DEFAULT_TIMEOUT = 120
 
-SCAN_INTERVAL = timedelta(seconds=60)
+SCAN_INTERVAL = timedelta(seconds=120)
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_RESOURCE): cv.url,
+    vol.Required(CONF_HOST): cv.string,
     vol.Optional(CONF_AUTHENTICATION):
         vol.In([HTTP_BASIC_AUTHENTICATION, HTTP_DIGEST_AUTHENTICATION]),
     vol.Optional(CONF_HEADERS): vol.Schema({cv.string: cv.string}),
@@ -60,7 +61,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         _LOGGER.info(payload_construct)
         data = RestData(
             method=DEFAULT_METHOD,
-            resource=config.get(CONF_RESOURCE),
+            resource='http://'+config.get(CONF_HOST)+"/JQ",
             payload_construct=payload_construct,
             parameter=parameter,
             timeout=DEFAULT_TIMEOUT
@@ -87,7 +88,6 @@ class BSBlanSensor(Entity):
         self._device_class = rest_data.device_class
         self._attributes = None
         self._force_update = force_update
-        # self.update = Throttle(interval)(self._update)
 
     @property
     def name(self):
