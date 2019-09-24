@@ -13,13 +13,26 @@ from homeassistant.components import climate
 from homeassistant.components.climate import (
     PLATFORM_SCHEMA as CLIMATE_PLATFORM_SCHEMA, ClimateDevice)
 from homeassistant.components.climate.const import (
-    DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP,
-    STATE_AUTO, STATE_HEAT, STATE_ECO, SUPPORT_ON_OFF, 
-    SUPPORT_OPERATION_MODE, SUPPORT_TARGET_TEMPERATURE,
-    DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, ATTR_OPERATION_MODE,
-    ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH, ATTR_MAX_TEMP,
-    ATTR_MIN_TEMP, SUPPORT_TARGET_TEMPERATURE_LOW, 
-    SUPPORT_TARGET_TEMPERATURE_HIGH)
+    ATTR_HVAC_MODE,
+    ATTR_TARGET_TEMP_HIGH, 
+    ATTR_TARGET_TEMP_LOW, 
+    CURRENT_HVAC_COOL,
+    CURRENT_HVAC_HEAT,
+    HVAC_MODE_HEAT, 
+    HVAC_MODE_COOL,
+    HVAC_MODE_HEAT_COOL, 
+    HVAC_MODE_OFF,
+    HVAC_MODES,
+    DEFAULT_MAX_TEMP, 
+    DEFAULT_MIN_TEMP,
+    ATTR_MAX_TEMP,
+    ATTR_MIN_TEMP, 
+    SUPPORT_TARGET_TEMPERATURE,
+    SUPPORT_TARGET_TEMPERATURE_RANGE,
+)
+    
+    # hvac_modes, need to add it as property
+
 from homeassistant.const import (
     CONF_AUTHENTICATION, CONF_FORCE_UPDATE, CONF_HEADERS, CONF_NAME,
     CONF_METHOD, CONF_PASSWORD, CONF_HOST,
@@ -27,7 +40,7 @@ from homeassistant.const import (
     CONF_VALUE_TEMPLATE, CONF_VERIFY_SSL, CONF_DEVICE_CLASS,
     HTTP_BASIC_AUTHENTICATION, HTTP_DIGEST_AUTHENTICATION,
     ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT, CONF_DEVICE, 
-    CONF_VALUE_TEMPLATE, STATE_OFF, STATE_ON)
+    CONF_VALUE_TEMPLATE, STATE_ON)
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -39,41 +52,13 @@ from .const import (
     ATTR_PROTECTION_TEMPERATURE, CONF_TEMP_MIN, CONF_TEMP_MAX, CONF_MODE_LIST,
     CONF_UNIQUE_ID)
 
-
-_LOGGER = logging.getLogger(__name__)
-
-HA_ATTR_TO_BSBLAN = {
-    ATTR_INSIDE_TEMPERATURE: '8740',
-    ATTR_OPERATION_MODE: '700', 
-    ATTR_TARGET_TEMPERATURE: '710',
-    # ATTR_MAX_TEMP: '711',
-    # ATTR_MIN_TEMP: '712',
-    # ATTR_PROTECTION_TEMPERATURE: '714',
-    # ATTR_OUTSIDE_TEMPERATURE: '8700',
-}
-
-# not needed for now
-HA_STATE_TO_BSBLAN = {
-    STATE_OFF: '0',
-    STATE_AUTO: '1',
-    STATE_ECO : '2',
-    STATE_HEAT: '3',
-}
-
-BSBLAN_TO_HA_STATE = {
-    '0': STATE_OFF,
-    '1': STATE_AUTO,
-    '2': STATE_ECO,
-    '3': STATE_HEAT,
-}
-
 DEFAULT_NAME = 'BSB-LAN HVAC'
 DEFAULT_METHOD = 'POST'
 DEFAULT_VERIFY_SSL = False
 DEFAULT_FORCE_UPDATE = False
-DEFAULT_TIMEOUT = 120
+DEFAULT_TIMEOUT = 30
 
-SCAN_INTERVAL = timedelta(seconds=60)
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORM_SCHEMA = CLIMATE_PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -90,13 +75,44 @@ PLATFORM_SCHEMA = CLIMATE_PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_TEMP_MAX, default=DEFAULT_MAX_TEMP): vol.Coerce(float),
     vol.Optional(CONF_UNIQUE_ID): cv.string,
     vol.Optional(CONF_MODE_LIST,
-                 default=[STATE_AUTO, STATE_OFF, STATE_HEAT, STATE_ECO
+                 default=[HVAC_MODE_HEAT_COOL, HVAC_MODE_OFF, HVAC_MODE_HEAT, # STATE_ECO
                           ]): cv.ensure_list,
 })
 
+# not needed for now
+HA_STATE_TO_BSBLAN = {
+    HVAC_MODE_OFF: '0',
+    HVAC_MODE_HEAT_COOL: '1',
+    # STATE_ECO : '2', need to change this to a preset mode
+    HVAC_MODE_HEAT: '3',
+}
+
+BSBLAN_TO_HA_STATE = {
+    '0': HVAC_MODE_OFF,
+    '1': HVAC_MODE_HEAT_COOL,
+    # '2': STATE_ECO,
+    '3': HVAC_MODE_HEAT,
+}
+
+HA_ATTR_TO_BSBLAN = {
+    ATTR_INSIDE_TEMPERATURE: '8740',
+    ATTR_HVAC_MODE: '700', # hvac_mode return the hvac state
+    ATTR_TARGET_TEMPERATURE: '710',
+    # ATTR_MAX_TEMP: '711',
+    # ATTR_MIN_TEMP: '712',
+    # ATTR_PROTECTION_TEMPERATURE: '714',
+    ATTR_OUTSIDE_TEMPERATURE: '8700',
+}
+
+
+SCAN_INTERVAL = timedelta(seconds=60)
+
+
 async def async_setup_platform(hass: HomeAssistantType, config: ConfigType,
                                async_add_entities, discovery_info=None):
-    """Set up BSB-LAN climate device through configuration.yaml."""
+    """Set up BSB-LAN climate device through configuration.yaml.
+    old way of setting up the Platform. Need new way of setting up!
+    """
     await _async_setup_entity(hass, config, async_add_entities)
 
 async def _async_setup_entity(hass, config, async_add_entities,
@@ -109,7 +125,8 @@ async def _async_setup_entity(hass, config, async_add_entities,
         method=DEFAULT_METHOD,
         host=config.get(CONF_HOST),
         parameters=HA_ATTR_TO_BSBLAN,
-        timeout=DEFAULT_TIMEOUT
+        timeout=DEFAULT_TIMEOUT,
+        auth=[config.get(CONF_USERNAME), config.get(CONF_PASSWORD)]
     )
     data.update()
     if data.setup_error is True:
@@ -145,6 +162,10 @@ class BSBlanClimate(ClimateDevice):
         """Return a unique ID."""
         return self._unique_id
 
+    async def async_set_preset_mode(self, preset_mode):
+        """Set new target preset mode."""
+        pass
+
     @property
     def supported_features(self):
         """Return the list of supported features."""
@@ -153,18 +174,14 @@ class BSBlanClimate(ClimateDevice):
         if (self._rest_data.target_temp is not None):
             support |= SUPPORT_TARGET_TEMPERATURE
         
-        if (self._rest_data.target_temp_low is not None):
-            support |= SUPPORT_TARGET_TEMPERATURE_LOW
+        if (self._rest_data.target_temp_range is not None):
+            support |= SUPPORT_TARGET_TEMPERATURE_RANGE
     
-        if (self._rest_data.target_temp_high is not None):
-            support |= SUPPORT_TARGET_TEMPERATURE_HIGH
-
         if (self._rest_data.current_operation is not None):
-            support |= SUPPORT_OPERATION_MODE
+            support |= ATTR_HVAC_MODE
 
         _LOGGER.debug("support: %s", support)
         return support
-
 
     @property
     def current_temperature(self):
@@ -198,7 +215,7 @@ class BSBlanClimate(ClimateDevice):
 
     async def async_set_operation_mode(self, operation_mode):
         """Set HVAC mode."""
-        self._rest_data._set({ATTR_OPERATION_MODE: operation_mode})
+        self._rest_data._set({ATTR_HVAC_MODE: operation_mode})
     
     @property
     def target_temperature(self):
@@ -261,12 +278,13 @@ class BSBlanClimate(ClimateDevice):
 class RestData():
     """Class for handling the data retrieval."""
     
-    def __init__(self, method, host, parameters, timeout):
+    def __init__(self, method, host, parameters, timeout, auth):
         """Initialize the data object."""
         self.method = method
         self.host = host
         self._parameters = parameters
         self._timeout = timeout
+        self.auth = auth
         self.setup_error = False
         self.data = None
         self.state = None
@@ -277,8 +295,7 @@ class RestData():
         self.target_temp = None
         self.value = None
         self.current_operation = None
-        self.target_temp_high = None
-        self.target_temp_low = None
+        self.target_temp_range = None
         self.proc_temp = None
 
     # maybe rewrite this so it's not requesting all parameters
@@ -293,14 +310,21 @@ class RestData():
         parameters = self._parameters
         host = self.host
         method = self.method
+        authorize = self.auth
 
         try:
             for attr, parameter in parameters.items():
                 # _LOGGER.debug("print key: %s", attr)
                 payload_dict = {}
                 payload_dict['Parameter'] = str(parameter)
-                request = requests.Request(
-                    method, 'http://'+host+'/JQ', json=payload_dict).prepare()
+                # authenication auth=('user', 'pass')
+                if authorize is not None: # check if auth is enebled
+                    request = requests.Request(
+                        method, 'http://'+host+'/JQ', json=payload_dict, auth=authorize).prepare()
+                else:
+                    request = requests.Request(
+                        method, 'http://'+host+'/JQ', json=payload_dict).prepare()
+
                 with requests.Session() as sess:
                     response = sess.send(
                         request, timeout=self._timeout).json()
@@ -356,14 +380,14 @@ class RestData():
         values = {}
 
         # get values
-        for attr in [ATTR_TEMPERATURE, ATTR_OPERATION_MODE]:
+        for attr in [ATTR_TEMPERATURE, ATTR_HVAC_MODE]:
             value = settings.get(attr)
             if value is None:
                 continue
             
             bsblan_attr =  HA_ATTR_TO_BSBLAN.get(attr)
             if bsblan_attr is not None:
-                if attr == ATTR_OPERATION_MODE:
+                if attr == ATTR_HVAC_MODE:
                     _LOGGER.debug("print values ha attr: %s ", value)
                     values[bsblan_attr] = HA_STATE_TO_BSBLAN[value]
             
