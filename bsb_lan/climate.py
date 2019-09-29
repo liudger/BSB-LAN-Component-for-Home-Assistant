@@ -1,7 +1,12 @@
 """Support for BSB-LAN climate devices."""
+# need the same idea of the opentherm gateway
+# sensors for reading info
+# binary_sensor for toggle settings
+# climate for the basic thermostat
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
+
 import json
 
 import requests
@@ -26,7 +31,8 @@ from homeassistant.components.climate.const import (
     DEFAULT_MAX_TEMP, 
     DEFAULT_MIN_TEMP,
     ATTR_MAX_TEMP,
-    ATTR_MIN_TEMP, 
+    ATTR_MIN_TEMP,
+    SUPPORT_PRESET_MODE, 
     SUPPORT_TARGET_TEMPERATURE,
     SUPPORT_TARGET_TEMPERATURE_RANGE,
 )
@@ -34,13 +40,27 @@ from homeassistant.components.climate.const import (
     # hvac_modes, need to add it as property
 
 from homeassistant.const import (
-    CONF_AUTHENTICATION, CONF_FORCE_UPDATE, CONF_HEADERS, CONF_NAME,
-    CONF_METHOD, CONF_PASSWORD, CONF_HOST,
-    CONF_UNIT_OF_MEASUREMENT, CONF_USERNAME, CONF_TIMEOUT,
-    CONF_VALUE_TEMPLATE, CONF_VERIFY_SSL, CONF_DEVICE_CLASS,
-    HTTP_BASIC_AUTHENTICATION, HTTP_DIGEST_AUTHENTICATION,
-    ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT, CONF_DEVICE, 
-    CONF_VALUE_TEMPLATE, STATE_ON)
+    CONF_AUTHENTICATION, 
+    CONF_FORCE_UPDATE, 
+    CONF_HEADERS, 
+    CONF_NAME,
+    CONF_METHOD, 
+    CONF_PASSWORD, 
+    CONF_HOST,
+    CONF_UNIT_OF_MEASUREMENT, 
+    CONF_USERNAME, CONF_TIMEOUT,
+    CONF_VALUE_TEMPLATE, 
+    CONF_VERIFY_SSL, 
+    CONF_DEVICE_CLASS,
+    HTTP_BASIC_AUTHENTICATION, 
+    HTTP_DIGEST_AUTHENTICATION,
+    ATTR_TEMPERATURE,
+    TEMP_CELSIUS, 
+    TEMP_FAHRENHEIT, 
+    CONF_DEVICE, 
+    CONF_VALUE_TEMPLATE, 
+    STATE_ON,
+)
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -48,15 +68,25 @@ from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 from homeassistant.util import Throttle
 
 from .const import (
-    ATTR_INSIDE_TEMPERATURE, ATTR_OUTSIDE_TEMPERATURE, ATTR_TARGET_TEMPERATURE,
-    ATTR_PROTECTION_TEMPERATURE, CONF_TEMP_MIN, CONF_TEMP_MAX, CONF_MODE_LIST,
-    CONF_UNIQUE_ID)
+    ATTR_INSIDE_TEMPERATURE, 
+    ATTR_OUTSIDE_TEMPERATURE, 
+    ATTR_TARGET_TEMPERATURE,
+    ATTR_PROTECTION_TEMPERATURE, 
+    CONF_TEMP_MIN, 
+    CONF_TEMP_MAX, 
+    CONF_MODE_LIST,
+    CONF_UNIQUE_ID,
+)
 
+# this should go in the config or other location
 DEFAULT_NAME = 'BSB-LAN HVAC'
 DEFAULT_METHOD = 'POST'
 DEFAULT_VERIFY_SSL = False
 DEFAULT_FORCE_UPDATE = False
 DEFAULT_TIMEOUT = 30
+DEFAULT_MIN_TEMP = 7
+CONF_TEMP_MAX = 25
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -303,6 +333,7 @@ class RestData():
     # initial update should pull all than only temperture on regular interval
     # use key so (attr) so specific param could be updated when interface changes them.
 
+    @callback
     def update(self):
         """Get the latest data from BSB-LAN request service with post method."""
         import objectpath
