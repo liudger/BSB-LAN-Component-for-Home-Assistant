@@ -1,5 +1,7 @@
 # BSB Lan climate and sensor 
 
+## Breaking this custom component doesn't work with current home assistent version. I am working on a better solution.
+
 This custom component handles the communication to a BSB-Lan Module and create the entities for Home Assistant.
 
 info for the BSB-LAN Module
