@@ -63,8 +63,8 @@ import objectpath
 def get_data():
     """Get data BSB-LAN platform."""
 
-    
-    
+
+
 
     # JQ used for query
     # JS sets params
@@ -74,14 +74,14 @@ def get_data():
     url = 'http://10.0.1.60/JQ'
     # username = config.get(CONF_USERNAME)
     # password = config.get(CONF_PASSWORD)
-    post_fields = {'Parameter':'700'}
+    post_fields = {'Parameter':'710'}
 
     r = requests.post(url, json=post_fields)
     print(r.status_code, r.reason)
     response_data = r.json()
     print (response_data)
     # print(r.text)
-    response_tree = objectpath.Tree(response_data['700'])
+    response_tree = objectpath.Tree(response_data['710'])
     result = tuple(response_tree.execute('$..value'))
     print (result[0])
     # for item in response_data:
